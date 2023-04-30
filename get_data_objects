@@ -1,0 +1,47 @@
+import os
+import requests
+from bs4 import BeautifulSoup
+#https://commons.wikimedia.org/w/index.php?search=white+background&title=Special:MediaSearch&go=Go&type=image&filemime=jpeg&fileres=500%2C1000&sort=recency
+# Define the URL of the Google search page
+url = "https://commons.wikimedia.org/w/index.php?search=white+background&title=Special:MediaSearch&go=Go&type=image&filemime=jpeg&fileres=500%2C1000"
+url = "https://commons.wikimedia.org/w/index.php?search=white+background&title=Special:MediaSearch&go=Go&type=image&filemime=jpeg&fileres=500%2C1000&sort=recency"
+url = "https://ro.pinterest.com/pin/white-background-fruit-objects--508343876665448851/"
+url = "https://www.pexels.com/search/fruits%20white%20background/?size=small"
+# Set headers to emulate a web browser
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+}
+#white background
+
+# Send a GET request to the URL with the headers
+response = requests.get(url, headers=headers)
+
+# Parse the HTML content of the response using BeautifulSoup
+soup = BeautifulSoup(response.content, "html.parser")
+
+# Find all image tags on the page
+image_tags = soup.find_all("img")
+
+# Create a directory to save the images in
+if not os.path.exists("images"):
+    os.makedirs("images")
+
+# Download and save each image to the directory
+i = 378
+for img in (image_tags):
+    try:
+        # Get the source URL of the image
+        img_url = img["src"]
+
+        # Check if the image is a PNG or JPG file
+        if "png" in img_url or "jpg" in img_url:
+            # Send a GET request to the image URL with the headers
+            img_response = requests.get(img_url, headers=headers)
+
+            # Save the image to the directory with a unique filename
+            with open(f"images/img{i}.jpg", "wb") as f:
+                f.write(img_response.content)
+                print(f"Saved img{i}.jpg")
+        i+=1
+    except:
+        pass
