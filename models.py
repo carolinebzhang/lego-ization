@@ -1,7 +1,10 @@
 #https://github.com/wangguanan/Pytorch-Image-Translation-GANs/blob/master/cyclegan/models.py
 import torch
 import torch.nn as nn
+from torch.nn.functional import l1_loss
 
+def cycle_loss(real_a, cycle_a, real_b, cycle_b):
+    return l1_loss(real_a, cycle_a) + l1_loss(real_b, cycle_b)
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
@@ -10,6 +13,55 @@ def weights_init_normal(m):
     elif classname.find('BatchNorm2d') != -1:
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
+
+# implement identity loss/identiy loss pretraining?
+
+# using an image pool to buffer images, ideally, helps the generator stay ahead of the discriminator 
+class ImagePool():
+    """This class implements an image buffer that stores previously generated images.
+    This buffer enables us to update discriminators using a history of generated images
+    rather than the ones produced by the latest generators.
+    """
+
+    def __init__(self, pool_size):
+        """Initialize the ImagePool class
+        Parameters:
+            pool_size (int) -- the size of image buffer, if pool_size=0, no buffer will be created
+        """
+        self.pool_size = pool_size
+        if self.pool_size > 0:  # create an empty pool
+            self.num_imgs = 0
+            self.images = []
+
+    def query(self, images):
+        """Return an image from the pool.
+        Parameters:
+            images: the latest generated images from the generator
+        Returns images from the buffer.
+        By 50/100, the buffer will return input images.
+        By 50/100, the buffer will return images previously stored in the buffer,
+        and insert the current images to the buffer.
+        """
+        if self.pool_size == 0:  # if the buffer size is 0, do nothing
+            return images
+        return_images = []
+        for image in images:
+            image = torch.unsqueeze(image.data, 0)
+            if self.num_imgs < self.pool_size:   # if the buffer is not full; keep inserting current images to the buffer
+                self.num_imgs = self.num_imgs + 1
+                self.images.append(image)
+                return_images.append(image)
+            else:
+                p = random.uniform(0, 1)
+                if p > 0.5:  # by 50% chance, the buffer will return a previously stored image, and insert the current image into the buffer
+                    random_id = random.randint(0, self.pool_size - 1)  # randint is inclusive
+                    tmp = self.images[random_id].clone()
+                    self.images[random_id] = image
+                    return_images.append(tmp)
+                else:       # by another 50% chance, the buffer will return the current image
+                    return_images.append(image)
+        return_images = torch.cat(return_images, 0)   # collect all the images and return
+        return return_images
 
 
 class ResidualBlock(nn.Module):
@@ -103,3 +155,63 @@ class Discriminator(nn.Module):
         x = self.model(x)
         out_src = self.conv_src(x)
         return out_src
+    
+class CycleGAN(nn.Module):
+
+    def __init__(self, mode='train', lamb=10):
+        super(CycleGAN, self).__init__()
+        assert mode in ["train", "A2B", "B2A"]
+        self.G_A2B = Generator()
+        self.G_B2A = Generator()
+        self.D_A = Discriminator()
+        self.D_B = Discriminator()
+        self.l2loss = nn.MSELoss(reduction="mean")
+        self.mode = mode
+        self.lamb = lamb
+        self.fake_A_pool = ImagePool(50)
+        self.fake_B_pool = ImagePool(50)
+
+    def forward(self, real_A, real_B):
+        # blue line
+        fake_B = self.G_A2B(real_A)
+        cycle_A = self.G_B2A(fake_B)
+
+        # red line
+        fake_A = self.G_B2A(real_B)
+        cycle_B = self.G_A2B(fake_A)
+
+        if self.mode == 'train':
+            DA_fake = self.D_A(fake_A)
+            DB_fake = self.D_B(fake_B)
+
+            # Generator losses
+            g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
+            g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
+
+            # Cycle loss
+            c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
+
+            # Discriminator losses
+            DA_real = self.D_A(real_A)
+            DB_real = self.D_B(real_B)
+
+            # buffer helps prevent oscillation in training
+            fake_A = self.fake_A_pool.query(fake_A)
+            fake_B = self.fake_B_pool.query(fake_B)
+
+            DA_fake = self.D_A(fake_A)
+            DB_fake = self.D_B(fake_B)
+
+            d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
+            d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
+            d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+            d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
+            d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
+            d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
+
+            return (c_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss)
+
+        elif self.mode == 'A2B':
+                return fake_B, cycle_A
+        elif self.mode == 'B2A':
+                return fake_A, cycle_B
