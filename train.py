@@ -4,6 +4,8 @@ import torch
 def train(epochs=1, save=True):
     model = CycleGAN()
 
+    # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
+    # 128x128 or 256x256 images
     opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters())
     opt_G_B2A = torch.optim.Adam(model.G_B2A.parameters())
     opt_D_A = torch.optim.Adam(model.D_A.parameters())
