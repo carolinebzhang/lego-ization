@@ -3,16 +3,16 @@ import torch
 from datasets import get_data
 
 images_train_loader, images_test_loader = get_data(32)
-def train(epochs=3, save=True):
+def train(epochs=2, save=True):
     print("training")
     model = CycleGAN()
     print("not cyclegan 8")
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
     # 128x128 or 256x256 images
-    opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters())
-    opt_G_B2A = torch.optim.Adam(model.G_B2A.parameters())
-    opt_D_A = torch.optim.Adam(model.D_A.parameters())
-    opt_D_B = torch.optim.Adam(model.D_B.parameters())
+    opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters(), lr=.0002)
+    opt_G_B2A = torch.optim.Adam(model.G_B2A.parameters(), lr=.0002)
+    opt_D_A = torch.optim.Adam(model.D_A.parameters(), lr=.0002)
+    opt_D_B = torch.optim.Adam(model.D_B.parameters(), lr=.0002)
 
     for epoch in range(epochs):
         print(epoch)
@@ -33,7 +33,7 @@ def train(epochs=3, save=True):
             g_B2A_loss.backward(retain_graph=True)
 
             d_A_loss.backward(retain_graph=True)
-            d_B_loss.backward(retain_graph=True)
+            d_B_loss.backward()
 
             opt_G_A2B.step()
             opt_G_B2A.step()

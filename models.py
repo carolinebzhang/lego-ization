@@ -80,7 +80,8 @@ class ResidualBlock(nn.Module):
         )
 
     def forward(self, x):
-        print("residual forward")
+        #print("residual forward")
+        x=x.float()
         return self.model(x) + x
 
 
@@ -125,7 +126,8 @@ class Generator(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self, x,):
-        print("generator forward")
+        x=x.float()
+        #("generator forward")
         return self.model(x)
 
 
@@ -155,7 +157,8 @@ class Discriminator(nn.Module):
         self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False)
 
     def forward(self, x):
-        print("discriminator forward")
+        #print("discriminator forward")
+        x=x.float()
         x = self.model(x)
         out_src = self.conv_src(x)
         return out_src
@@ -165,10 +168,10 @@ class CycleGAN(nn.Module):
     def __init__(self, mode='train', lamb=10):
         super(CycleGAN, self).__init__()
         assert mode in ["train", "A2B", "B2A"]
-        self.G_A2B = Generator(conv_dim=32, layer_num=32)
-        self.G_B2A = Generator(conv_dim=32, layer_num=32)
-        self.D_A = Discriminator(image_size=256, conv_dim=32, layer_num=32)
-        self.D_B = Discriminator(image_size=256, conv_dim=32, layer_num=32)
+        self.G_A2B = Generator(conv_dim=16, layer_num=4)
+        self.G_B2A = Generator(conv_dim=16, layer_num=4)
+        self.D_A = Discriminator(image_size=256, conv_dim=16, layer_num=2)
+        self.D_B = Discriminator(image_size=256, conv_dim=16, layer_num=2)
         self.l2loss = nn.MSELoss(reduction="mean")
         self.mode = mode
         self.lamb = lamb
@@ -177,7 +180,7 @@ class CycleGAN(nn.Module):
 
     def forward(self, real_A, real_B):
         # blue line
-        print("cyclegan forward")
+        #print("cyclegan forward")
         fake_B = self.G_A2B(real_A)
         cycle_A = self.G_B2A(fake_B)
 
@@ -189,12 +192,12 @@ class CycleGAN(nn.Module):
             DA_fake = self.D_A(fake_A)
             DB_fake = self.D_B(fake_B)
 
+            # Cycle loss
+            c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
+
             # Generator losses
             g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
             g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
-
-            # Cycle loss
-            c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
 
             # Discriminator losses
             DA_real = self.D_A(real_A)

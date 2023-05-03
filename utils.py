@@ -37,6 +37,20 @@ def preprocess_image(folder_path:str, target_size:int, is_lego:bool):
                 continue
     print("finished saving {obj_label}")
 
+def process_single_image(image_path, target_size):
+    image = skimage.io.imread(image_path)
+
+    if image.shape[0] != image.shape[1]:
+        diff = abs(image.shape[0] - image.shape[1])
+        padding = [(0, 0), (0, 0), (0, 0)]
+        if image.shape[0] > image.shape[1]:
+            padding[1] = (diff // 2, diff - (diff // 2))
+        else:
+            padding[0] = (diff // 2, diff - (diff // 2))
+        image = np.pad(image, padding, mode='constant', constant_values=255)
+
+    image = skimage.transform.resize(image, (target_size, target_size))
+    return image
 
 def numpy_to_torch(folder_path):
     """
@@ -56,7 +70,8 @@ def numpy_to_torch(folder_path):
             img_npy = np.load(os.path.join(folder_path, filename))
             img_npys.append(img_npy)
             #print(timeshift)
-    final_images = [torch.tensor(img) for img in img_npys]
+            
+    final_images = [torch.reshape(torch.tensor(img), (3, 256, 256)) for img in img_npys]
 
     print("loaded!") 
     return final_images
