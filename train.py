@@ -3,10 +3,9 @@ import torch
 from datasets import get_data
 
 images_train_loader, images_test_loader = get_data(32)
-def train(epochs=1, save=True):
+def train(epochs=10, save=True):
     print("training")
     model = CycleGAN()
-    print("not cyclegan 8")
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
     # 128x128 or 256x256 images
     opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters(), lr=.0002)
@@ -15,7 +14,7 @@ def train(epochs=1, save=True):
     opt_D_B = torch.optim.Adam(model.D_B.parameters(), lr=.0002)
 
     for epoch in range(epochs):
-        print(epoch)
+        print(f"epoch: {epoch}")
         model.train()
         #for i, batch in batches: # TODO FIGURE OUR DATA LOADING / BATCHING
         for i, data in enumerate(images_train_loader):
@@ -30,7 +29,7 @@ def train(epochs=1, save=True):
             cycle_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss = model(real_a, real_b)
             
             g_A2B_loss.backward(retain_graph=True)
-            g_B2A_loss.backward(retain_graph=True)
+            g_B2A_loss.backward()
 
             opt_G_A2B.step()
             opt_G_B2A.step()
@@ -40,8 +39,7 @@ def train(epochs=1, save=True):
 
             opt_D_A.step()
             opt_D_B.step()
-            print(f"loss: {g_A2B_loss}")
-        print(f"epoch:{epoch}")
+            print(f"cycle_loss: {cycle_loss} g_A2B_loss: {g_A2B_loss}, g_B2A_loss: {g_B2A_loss} d_A_loss: {d_A_loss} d_B_loss: {d_B_loss}")
 
     if save:
         torch.save(model.state_dict(), 'model.pth')

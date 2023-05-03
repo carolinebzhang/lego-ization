@@ -36,12 +36,12 @@ def generate_image(input_img_path, genre):
     output_image = output_image.astype(np.uint8)
     
     data = im.fromarray(output_image)
-    if data.mode != 'RGB':
-        data = data.convert('RGB')
+    #if data.mode != 'RGB':
+   #     data = data.convert('RGB')
       
     # saving the final output 
     # as a PNG file
     data.save('PLEASE.png')
 
 if __name__=="__main__":
-    generate_image('realworld_objects/1313.jpg', genre='lego')
+    generate_image('ROI.png', genre='real_world')

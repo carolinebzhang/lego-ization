@@ -165,7 +165,7 @@ class Discriminator(nn.Module):
     
 class CycleGAN(nn.Module):
 
-    def __init__(self, mode='train', lamb=10):
+    def __init__(self, mode='train', lamb=50):
         super(CycleGAN, self).__init__()
         assert mode in ["train", "A2B", "B2A"]
         self.G_A2B = Generator(conv_dim=16, layer_num=4)
@@ -195,17 +195,22 @@ class CycleGAN(nn.Module):
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
 
+            # Identity loss, helps preserve color and structure of original images
+            i_loss_a2b = l1_loss(real_A, fake_B) * self.lamb
+            i_loss_b2a = l1_loss(real_B, fake_A) * self.lamb
+
             # Generator losses
-            g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
-            g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
+            g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss + i_loss_a2b
+            g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss + i_loss_b2a
+
 
             # Discriminator losses
             DA_real = self.D_A(real_A)
             DB_real = self.D_B(real_B)
 
             # buffer helps prevent oscillation in training
-            fake_A = self.fake_A_pool.query(fake_A)
-            fake_B = self.fake_B_pool.query(fake_B)
+            fake_A = self.fake_A_pool.query(fake_A.clone().detach())
+            fake_B = self.fake_B_pool.query(fake_B.clone().detach())
 
             DA_fake = self.D_A(fake_A)
             DB_fake = self.D_B(fake_B)
