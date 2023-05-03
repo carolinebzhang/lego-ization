@@ -26,7 +26,9 @@ def train(epochs=1, save=True, load=False, model_path='model.pth'):
         for i, data in enumerate(images_train_loader):
             print(f"batch: {i}")
             real_a, real_b = data['lego_image'], data['real_image']
-            
+            if device == 'cuda':
+                 real_a = real_a.cuda()
+                 real_b = real_b.cuda()
             opt_G_A2B.zero_grad()
             opt_G_B2A.zero_grad()
             opt_D_A.zero_grad()
