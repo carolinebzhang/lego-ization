@@ -3,7 +3,7 @@ import torch
 from datasets import get_data
 
 images_train_loader, images_test_loader = get_data(32)
-def train(epochs=2, save=True):
+def train(epochs=1, save=True):
     print("training")
     model = CycleGAN()
     print("not cyclegan 8")
@@ -32,11 +32,12 @@ def train(epochs=2, save=True):
             g_A2B_loss.backward(retain_graph=True)
             g_B2A_loss.backward(retain_graph=True)
 
+            opt_G_A2B.step()
+            opt_G_B2A.step()
+
             d_A_loss.backward(retain_graph=True)
             d_B_loss.backward()
 
-            opt_G_A2B.step()
-            opt_G_B2A.step()
             opt_D_A.step()
             opt_D_B.step()
             print(f"loss: {g_A2B_loss}")

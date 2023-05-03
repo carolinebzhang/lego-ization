@@ -44,4 +44,4 @@ def generate_image(input_img_path, genre):
     data.save('PLEASE.png')
 
 if __name__=="__main__":
-    generate_image('realworld_objects/1313.jpg', genre='real_world')
+    generate_image('realworld_objects/1313.jpg', genre='lego')
