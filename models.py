@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 from torch.nn.functional import l1_loss
+from numpy import random
 
 def cycle_loss(real_a, cycle_a, real_b, cycle_b):
     return l1_loss(real_a, cycle_a) + l1_loss(real_b, cycle_b)
@@ -99,18 +100,18 @@ class Generator(nn.Module):
 
         # down sampling layers
         current_dims = conv_dim
-        for i in xrange(2):
+        for i in range(2):
             layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False))
             layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True))
             layers.append(nn.ReLU(inplace=True))
             current_dims *= 2
 
         # Residual Layers
-        for i in xrange(layer_num):
+        for i in range(layer_num):
             layers.append(ResidualBlock(current_dims, current_dims))
 
         # up sampling layers
-        for i in xrange(2):
+        for i in range(2):
             layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False))
             layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True))
             layers.append(nn.ReLU(inplace=True))
@@ -140,7 +141,7 @@ class Discriminator(nn.Module):
         current_dim = conv_dim
 
         # hidden layers
-        for i in xrange(layer_num):
+        for i in range(layer_num):
             layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1))
             layers.append(nn.InstanceNorm2d(current_dim*2))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
