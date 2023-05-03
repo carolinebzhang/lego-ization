@@ -166,13 +166,13 @@ class Discriminator(nn.Module):
     
 class CycleGAN(nn.Module):
 
-    def __init__(self, mode='train', lamb=10):
+    def __init__(self, mode='train', lamb=100):
         super(CycleGAN, self).__init__()
         assert mode in ["train", "A2B", "B2A"]
-        self.G_A2B = Generator(conv_dim=16, layer_num=4)
-        self.G_B2A = Generator(conv_dim=16, layer_num=4)
-        self.D_A = Discriminator(image_size=256, conv_dim=16, layer_num=2)
-        self.D_B = Discriminator(image_size=256, conv_dim=16, layer_num=2)
+        self.G_A2B = Generator(conv_dim=64, layer_num=6)
+        self.G_B2A = Generator(conv_dim=64, layer_num=6)
+        self.D_A = Discriminator(image_size=256, conv_dim=64, layer_num=3)
+        self.D_B = Discriminator(image_size=256, conv_dim=64, layer_num=3)
         self.l2loss = nn.MSELoss(reduction="mean")
         self.mode = mode
         self.lamb = lamb

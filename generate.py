@@ -5,15 +5,18 @@ import numpy as np
 from utils import *
 from PIL import Image as im
 
-def generate_image(input_img_path, genre, model_path='model.pth'):
+def generate_image(input_img_path, genre, model_path, output_image_path):
 
     model = CycleGAN()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = model.to(device)
+    model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
+
     input_image = process_single_image(input_img_path, 256)
     #input_image = torch.permute(torch.tensor(input_image).double(),(2,0,1))
     input_image = torch.tensor(input_image)
     input_image = torch.reshape(input_image, (3, 256, 256))
     input_image = torch.unsqueeze(input_image, 0)
-    model.load_state_dict(torch.load(model_path))
     model.mode = "A2B"
     
     # Generate a time-shift representation of the output song
@@ -38,7 +41,8 @@ def generate_image(input_img_path, genre, model_path='model.pth'):
       
     # saving the final output 
     # as a PNG file
-    data.save('PLEASE.png')
+    final_path = output_image_path + ".png"
+    data.save(final_path)
 
 if __name__=="__main__":
-    generate_image('realworld_objects/1313.jpg', genre='lego')
+    generate_image('ORIGINAL.jpg', genre='real_world', model_path='Models/model49.pth', output_image_path="epoch12_rw")
