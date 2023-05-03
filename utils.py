@@ -83,4 +83,4 @@ def get_all_data():
     preprocess_image("/Users/carolinezhang/Downloads/lego-ization/realworld_objects", 256, False)
     print("real world objects are done!")
 
-get_all_data()
+#get_all_data()

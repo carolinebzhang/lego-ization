@@ -4,6 +4,8 @@ import torch.nn as nn
 from torch.nn.functional import l1_loss
 from numpy import random
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 def cycle_loss(real_a, cycle_a, real_b, cycle_b):
     return l1_loss(real_a, cycle_a) + l1_loss(real_b, cycle_b)
 
@@ -71,11 +73,11 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, device=device),
+            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, device=device),
+            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
         )
 
     def forward(self, x):
@@ -95,15 +97,15 @@ class Generator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=7, stride=1, padding=3, bias=False))
-        layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True))
+        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=7, stride=1, padding=3, bias=False, device=device))
+        layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True, device=device))
         layers.append(nn.ReLU(inplace=True))
 
         # down sampling layers
         current_dims = conv_dim
         for i in range(2):
-            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False))
-            layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True))
+            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
+            layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims *= 2
 
@@ -113,13 +115,13 @@ class Generator(nn.Module):
 
         # up sampling layers
         for i in range(2):
-            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False))
-            layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True))
+            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
+            layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims = current_dims//2
 
         # output layer
-        layers.append(nn.Conv2d(current_dims, 3, kernel_size=7, stride=1, padding=3, bias=False))
+        layers.append(nn.Conv2d(current_dims, 3, kernel_size=7, stride=1, padding=3, bias=False, device=device))
         layers.append(nn.Tanh())
 
         self.model = nn.Sequential(*layers)
@@ -139,21 +141,21 @@ class Discriminator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1))
+        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, device=device))
         layers.append(nn.LeakyReLU(0.2, inplace=True))
         current_dim = conv_dim
 
         # hidden layers
         for i in range(layer_num):
-            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1))
-            layers.append(nn.InstanceNorm2d(current_dim*2))
+            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, device=device))
+            layers.append(nn.InstanceNorm2d(current_dim*2, device=device))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
             current_dim *= 2
 
         self.model = nn.Sequential(*layers)
 
         # output layer
-        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False, device=device)
 
     def forward(self, x):
         #print("discriminator forward")
@@ -193,10 +195,15 @@ class CycleGAN(nn.Module):
 
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
-
-            # Generator losses
-            g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
-            g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
+            
+            if device == 'cuda':
+                # Generator losses
+                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss
+                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss
+            else: 
+                # Generator losses
+                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
+                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
 
             # Discriminator losses
             DA_real = self.D_A(real_A)
