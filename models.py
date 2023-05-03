@@ -16,7 +16,6 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 # implement identity loss/identiy loss pretraining?
-
 # using an image pool to buffer images, ideally, helps the generator stay ahead of the discriminator 
 class ImagePool():
     """This class implements an image buffer that stores previously generated images.
@@ -175,8 +174,8 @@ class CycleGAN(nn.Module):
         self.l2loss = nn.MSELoss(reduction="mean")
         self.mode = mode
         self.lamb = lamb
-        self.fake_A_pool = ImagePool(50)
-        self.fake_B_pool = ImagePool(50)
+        self.fake_A_pool = ImagePool(5)
+        self.fake_B_pool = ImagePool(5)
 
     def forward(self, real_A, real_B):
         # blue line
@@ -210,11 +209,18 @@ class CycleGAN(nn.Module):
             DA_fake = self.D_A(fake_A)
             DB_fake = self.D_B(fake_B)
 
-            d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
-            d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
+            # d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
+            # d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
+            # d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+            # d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
+            # d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
+            # d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
+
+            d_A_loss_real = self.l2loss(DA_real, DA_fake)
+            d_A_loss_fake = self.l2loss(DA_fake, DA_real)
             d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
-            d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
-            d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
+            d_B_loss_real = self.l2loss(DB_real, DB_fake)
+            d_B_loss_fake = self.l2loss(DB_fake, DB_real)
             d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
 
             return (c_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss)

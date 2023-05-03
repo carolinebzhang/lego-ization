@@ -77,4 +77,10 @@ def numpy_to_torch(folder_path):
     return final_images
 
 
+def get_all_data():
+    preprocess_image("/Users/carolinezhang/Downloads/lego-ization/lego_objects", 256, True)
+    print("legos are done!")
+    preprocess_image("/Users/carolinezhang/Downloads/lego-ization/realworld_objects", 256, False)
+    print("real world objects are done!")
 
+get_all_data()

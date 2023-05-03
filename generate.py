@@ -5,7 +5,7 @@ import numpy as np
 from utils import *
 from PIL import Image as im
 
-def generate_image(input_img_path, genre):
+def generate_image(input_img_path, genre, model_path='model.pth'):
 
     model = CycleGAN()
     input_image = process_single_image(input_img_path, 256)
@@ -13,7 +13,7 @@ def generate_image(input_img_path, genre):
     input_image = torch.tensor(input_image)
     input_image = torch.reshape(input_image, (3, 256, 256))
     input_image = torch.unsqueeze(input_image, 0)
-    model.load_state_dict(torch.load('model.pth'))
+    model.load_state_dict(torch.load(model_path))
     model.mode = "A2B"
     
     # Generate a time-shift representation of the output song
@@ -22,16 +22,13 @@ def generate_image(input_img_path, genre):
     elif genre == 'real_world':
         output_image = model.G_B2A(input_image)
     else:
-        #raise ValueError("Invalid genre specified") 
+        raise ValueError("Invalid genre specified") 
         output_image=input_image 
     print(output_image.shape) 
-    #output_image = torch.permute(output_image, (1, 2, 0))
+
     output_image = output_image.detach().cpu().numpy() 
     output_image = np.reshape(output_image, (256, 256, 3))
-    #mask = np.logical_and(output_image >= 0.0, output_image <= 1.0)
-    #output_image = output_image[mask]
-    #output_image = np.reshape(output_image, (256, 256, 3))
-    #output_image = np.ra(output_image.shape)
+
     output_image = output_image * 255
     output_image = output_image.astype(np.uint8)
     
@@ -44,4 +41,4 @@ def generate_image(input_img_path, genre):
     data.save('PLEASE.png')
 
 if __name__=="__main__":
-    generate_image('realworld_objects/1313.jpg', genre='lego')
+    generate_image('realworld_objects/1313.jpg', genre='real_world')
