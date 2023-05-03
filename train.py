@@ -1,9 +1,12 @@
 from models import CycleGAN
 import torch
+from datasets import get_data
 
-def train(epochs=1, save=True):
+images_train_loader, images_test_loader = get_data(32)
+def train(epochs=3, save=True):
+    print("training")
     model = CycleGAN()
-
+    print("not cyclegan 8")
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
     # 128x128 or 256x256 images
     opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters())
@@ -12,11 +15,12 @@ def train(epochs=1, save=True):
     opt_D_B = torch.optim.Adam(model.D_B.parameters())
 
     for epoch in range(epochs):
+        print(epoch)
         model.train()
         #for i, batch in batches: # TODO FIGURE OUR DATA LOADING / BATCHING
-        for i, data in enumerate(loader):
+        for i, data in enumerate(images_train_loader):
             print(f"batch: {i}")
-            real_a, real_b = data
+            real_a, real_b = data['lego_image'], data['real_image']
             
             opt_G_A2B.zero_grad()
             opt_G_B2A.zero_grad()

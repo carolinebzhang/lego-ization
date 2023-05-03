@@ -16,7 +16,7 @@ class ImageDataset(Dataset):
         self.real_label = real_label
 
     def __len__(self):
-        return len(self.A_time_shifts)
+        return len(self.lego_imgs)
 
     def __getitem__(self, index):
         lego_image = self.lego_imgs[index]
@@ -45,7 +45,7 @@ class ClassifierDataset(Dataset):
 
 def get_data(batch_size):
     lego_samples = numpy_to_torch("lego_arrays")
-    object_samples = numpy_to_torch("objects_arrays")
+    object_samples = numpy_to_torch("object_arrays")
 
     num_samples = min(len(lego_samples), len(object_samples))
     num_samples_round = num_samples // batch_size
@@ -57,12 +57,12 @@ def get_data(batch_size):
     
     training_loader = DataLoader(dataset=training_set, batch_size=32, shuffle=True)
     testing_loader = DataLoader(dataset=testing_set, batch_size=32, shuffle=False)
-
+    print('converted to dataloaders!')
     return training_loader, testing_loader
 
 def get_classifier_data(batch_size):
     lego_samples = numpy_to_torch("lego_arrays")
-    object_samples = numpy_to_torch("objects_arrays")
+    object_samples = numpy_to_torch("object_arrays")
 
     lego_num = len(lego_samples) // batch_size
     obj_num = len(object_samples) // batch_size
