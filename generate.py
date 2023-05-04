@@ -45,4 +45,4 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     data.save(final_path)
 
 if __name__=="__main__":
-    generate_image('ORIGINAL.jpg', genre='real_world', model_path='Models/model49.pth', output_image_path="epoch12_rw")
+    generate_image('ORIGINAL.jpg', genre='lego', model_path='Updated_models/model13.pth', output_image_path="epoch13_updated_toy_rw")
