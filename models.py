@@ -97,14 +97,14 @@ class Generator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=6, stride=1, padding=3, bias=False, device=device))
+        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=7, stride=1, padding=3, bias=False, device=device))
         layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True, device=device))
         layers.append(nn.ReLU(inplace=True))
 
         # down sampling layers
         current_dims = conv_dim
         for i in range(2):
-            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=1, padding=1, bias=False, device=device))
+            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims *= 2
@@ -115,13 +115,13 @@ class Generator(nn.Module):
 
         # up sampling layers
         for i in range(2):
-            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=1, padding=1, bias=False, device=device))
+            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims = current_dims//2
 
         # output layer
-        layers.append(nn.Conv2d(current_dims, 3, kernel_size=6, stride=1, padding=3, bias=False, device=device))
+        layers.append(nn.Conv2d(current_dims, 3, kernel_size=7, stride=1, padding=3, bias=False, device=device))
         layers.append(nn.Tanh())
 
         self.model = nn.Sequential(*layers)
@@ -141,13 +141,13 @@ class Discriminator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=1, padding=1, device=device))
+        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, device=device))
         layers.append(nn.LeakyReLU(0.2, inplace=True))
         current_dim = conv_dim
 
         # hidden layers
         for i in range(layer_num):
-            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=1, padding=1, device=device))
+            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, device=device))
             layers.append(nn.InstanceNorm2d(current_dim*2, device=device))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
             current_dim *= 2
@@ -166,13 +166,13 @@ class Discriminator(nn.Module):
     
 class CycleGAN(nn.Module):
 
-    def __init__(self, mode='train', lamb=100):
+    def __init__(self, mode='train', lamb=10):
         super(CycleGAN, self).__init__()
         assert mode in ["train", "A2B", "B2A"]
-        self.G_A2B = Generator(conv_dim=64, layer_num=6)
-        self.G_B2A = Generator(conv_dim=64, layer_num=6)
-        self.D_A = Discriminator(image_size=256, conv_dim=64, layer_num=3)
-        self.D_B = Discriminator(image_size=256, conv_dim=64, layer_num=3)
+        self.G_A2B = Generator(conv_dim=16, layer_num=4)
+        self.G_B2A = Generator(conv_dim=16, layer_num=4)
+        self.D_A = Discriminator(image_size=256, conv_dim=16, layer_num=2)
+        self.D_B = Discriminator(image_size=256, conv_dim=16, layer_num=2)
         self.l2loss = nn.MSELoss(reduction="mean")
         self.mode = mode
         self.lamb = lamb
@@ -196,14 +196,22 @@ class CycleGAN(nn.Module):
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
             
+            # if device == 'cuda':
+            #     # Generator losses
+            #     g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss
+            #     g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss
+            # else: 
+            #     # Generator losses
+            #     g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
+            #     g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
             if device == 'cuda':
                 # Generator losses
-                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss
-                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss
+                g_A2B_loss = self.l2loss(fake_B, torch.ones_like(fake_B).cuda()) + c_loss
+                g_B2A_loss = self.l2loss(fake_A, torch.ones_like(fake_A).cuda()) + c_loss
             else: 
                 # Generator losses
-                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
-                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
+                g_A2B_loss = self.l2loss(fake_B, torch.ones_like(fake_B)) + c_loss
+                g_B2A_loss = self.l2loss(fake_A, torch.ones_like(fake_A)) + c_loss
 
             # Discriminator losses
             DA_real = self.D_A(real_A)
@@ -213,22 +221,27 @@ class CycleGAN(nn.Module):
             fake_A = self.fake_A_pool.query(fake_A)
             fake_B = self.fake_B_pool.query(fake_B)
 
-            DA_fake = self.D_A(fake_A)
-            DB_fake = self.D_B(fake_B)
+            if device == 'cuda':
+                d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real).cuda())
+                d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake).cuda())
+                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+                d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real).cuda())
+                d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake).cuda())
+                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
+            else:
+                d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
+                d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
+                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+                d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
+                d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
+                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
 
-            # d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
-            # d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
+            # d_A_loss_real = self.l2loss(DA_real, DA_fake)
+            # d_A_loss_fake = self.l2loss(DA_fake, DA_real)
             # d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
-            # d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
-            # d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
+            # d_B_loss_real = self.l2loss(DB_real, DB_fake)
+            # d_B_loss_fake = self.l2loss(DB_fake, DB_real)
             # d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
-
-            d_A_loss_real = self.l2loss(DA_real, DA_fake)
-            d_A_loss_fake = self.l2loss(DA_fake, DA_real)
-            d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
-            d_B_loss_real = self.l2loss(DB_real, DB_fake)
-            d_B_loss_fake = self.l2loss(DB_fake, DB_real)
-            d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
 
             return (c_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss)
 
