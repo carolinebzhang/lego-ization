@@ -51,8 +51,8 @@ def train(epochs=50, save=True, load=False, model_path='model.pth'):
             opt_D_B.step()
 
             k += 1
-            total_d_A_loss += d_A_loss
-            total_d_B_loss += d_B_loss
+            total_d_A_loss += float(d_A_loss)
+            total_d_B_loss += float(d_B_loss)
         print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k}")
         total_fake_A_acc = 0
         total_fake_B_acc = 0
