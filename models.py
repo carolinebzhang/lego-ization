@@ -224,28 +224,17 @@ class CycleGAN(nn.Module):
 
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
-            
-            # if device == 'cuda':
-            #     # Generator losses
-            #     g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss
-            #     g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss
-            # else: 
-            #     # Generator losses
-            #     g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake)) + c_loss
-            #     g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake)) + c_loss
-            if device == 'cuda':
-                # Generator losses
-                idt_a = self.G_A2B(real_B)
-                idt_loss_a = self.criterionIdt(idt_a, real_B) * self.lamb
-                idt_b = self.G_B2A(real_A)
-                idt_loss_b = self.criterionIdt(idt_b, real_A) * self.lamb
-                g_A2B_loss = self.l2loss(fake_B, torch.ones_like(fake_B).cuda()) + c_loss
-                g_B2A_loss = self.l2loss(fake_A, torch.ones_like(fake_A).cuda()) + c_loss
 
+            i_loss_a2b = l1_loss(real_A, fake_B) * self.lamb
+            i_loss_b2a = l1_loss(real_B, fake_A) * self.lamb
+
+            if device == 'cuda':
+                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss + i_loss_a2b
+                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss + i_loss_b2a
             else: 
                 # Generator losses
-                g_A2B_loss = self.l2loss(fake_B, torch.ones_like(fake_B)) + c_loss
-                g_B2A_loss = self.l2loss(fake_A, torch.ones_like(fake_A)) + c_loss
+                g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss + i_loss_a2b
+                g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss + i_loss_b2a
 
             # Discriminator losses
             DA_real = self.D_A(real_A)
@@ -254,6 +243,9 @@ class CycleGAN(nn.Module):
             # buffer helps prevent oscillation in training
             fake_A = self.fake_A_pool.query(fake_A)
             fake_B = self.fake_B_pool.query(fake_B)
+
+            DA_fake = self.D_A(fake_A)
+            DB_fake = self.D_B(fake_B)
 
             if device == 'cuda':
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real).cuda())
