@@ -213,7 +213,7 @@ class CycleGAN(nn.Module):
         #print("cyclegan forward")
         fake_B = self.G_A2B(real_A)
         cycle_A = self.G_B2A(fake_B)
-
+        print(fake_B.shape)
         # red line
         fake_A = self.G_B2A(real_B)
         cycle_B = self.G_A2B(fake_A)
