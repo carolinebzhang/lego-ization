@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import l1_loss
 from numpy import random
-import torcheval
+from torcheval import metrics
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -184,7 +184,7 @@ class CycleGAN(nn.Module):
 
     def test(self, real_A, real_B):
         with torch.no_grad():
-            acc = torcheval.metrics.functional.binary_accuracy
+            acc = metrics.functional.binary_accuracy
             fake_B = self.G_A2B(real_A)
             
             fake_A = self.G_B2A(real_B)
@@ -197,13 +197,13 @@ class CycleGAN(nn.Module):
 
             DB_real = self.D_B(real_B)
 
-            fake_A_acc = acc(DA_fake, torch.zeros(len(DA_fake)))
+            fake_A_acc = acc(DA_fake.flatten(), torch.zeros(DA_fake.flatten().shape, device=device))
             
-            fake_B_acc = acc(DB_fake, torch.zeros(len(DB_fake)))
+            fake_B_acc = acc(DB_fake.flatten(), torch.zeros(DB_fake.flatten().shape, device=device))
 
-            real_A_acc = acc(DA_real, torch.ones(len(DA_real)))
+            real_A_acc = acc(DA_real.flatten(), torch.ones(DA_real.flatten().shape, device=device))
 
-            real_B_acc = acc(DB_real, torch.ones(len(DB_real)))
+            real_B_acc = acc(DB_real.flatten(), torch.ones(DB_real.flatten().shape, device=device))
 
             return fake_A_acc, fake_B_acc, real_A_acc, real_B_acc
 
@@ -258,17 +258,17 @@ class CycleGAN(nn.Module):
             if device == 'cuda':
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real).cuda())
                 d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake).cuda())
-                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 4
                 d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real).cuda())
                 d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake).cuda())
-                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
+                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 4
             else:
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
                 d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))
-                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
+                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 4
                 d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
                 d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
-                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
+                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 4
 
             # d_A_loss_real = self.l2loss(DA_real, DA_fake)
             # d_A_loss_fake = self.l2loss(DA_fake, DA_real)
