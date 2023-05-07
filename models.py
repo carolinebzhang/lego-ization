@@ -243,8 +243,8 @@ class CycleGAN(nn.Module):
             DB_real = self.D_B(real_B)
 
             # buffer helps prevent oscillation in training
-            fake_A = self.fake_A_pool.query(fake_A)
-            fake_B = self.fake_B_pool.query(fake_B)
+            fake_A = self.fake_A_pool.query(fake_A.clone().detach())
+            fake_B = self.fake_B_pool.query(fake_B.clone().detach())
 
             DA_fake = self.D_A(fake_A)
             DB_fake = self.D_B(fake_B)
@@ -252,10 +252,10 @@ class CycleGAN(nn.Module):
             if device == 'cuda':
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real).cuda())
                 d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake).cuda())
-                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 4
+                d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
                 d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real).cuda())
                 d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake).cuda())
-                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 4
+                d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
             else:
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real))
                 d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake))

@@ -60,7 +60,7 @@ def train(epochs=50, save=True, load=False, model_path='model6.pth'):
         total_real_B_acc = 0
         n = 0
         for i, data in enumerate(images_test_loader):
-            real_a, real_b = data['lego_image'], data['real_image']
+            real_a, real_b = data['lego_image'].float(), data['real_image'].float()
             if device == 'cuda':
                 real_a = real_a.cuda()
                 real_b = real_b.cuda()
