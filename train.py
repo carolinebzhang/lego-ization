@@ -3,7 +3,7 @@ import torch
 from datasets import get_data
 
 images_train_loader, images_test_loader = get_data(1)
-def train(epochs=50, save=True, load=False, model_path='model6.pth'):
+def train(epochs=50, save=True, load=True, model_path='model19.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
     if load:
@@ -37,7 +37,7 @@ def train(epochs=50, save=True, load=False, model_path='model6.pth'):
             cycle_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss = model(real_a, real_b)
             
             g_A2B_loss.backward(retain_graph=True)
-            g_B2A_loss.backward(retain_graph=True)
+            g_B2A_loss.backward()
 
             opt_G_A2B.step()
             opt_G_B2A.step()
@@ -45,7 +45,7 @@ def train(epochs=50, save=True, load=False, model_path='model6.pth'):
             opt_D_A.zero_grad()
             opt_D_B.zero_grad()
 
-            d_A_loss.backward(retain_graph=True)
+            d_A_loss.backward()
             d_B_loss.backward()
 
             opt_D_A.step()
