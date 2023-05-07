@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import l1_loss
 from numpy import random
-import torcheval
+from torcheval import metrics
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -182,7 +182,7 @@ class CycleGAN(nn.Module):
 
     def test(self, real_A, real_B):
         with torch.no_grad():
-            acc = torcheval.metrics.functional.binary_accuracy
+            acc = metrics.functional.binary_accuracy
             fake_B = self.G_A2B(real_A)
             
             fake_A = self.G_B2A(real_B)
