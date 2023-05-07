@@ -74,11 +74,11 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device),
-            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=True, padding_mode='reflect', device=device),
+            nn.InstanceNorm2d(out_channels, affine=False, track_running_stats=False, device=device),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device),
-            nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=True, padding_mode='reflect', device=device),
+            nn.InstanceNorm2d(out_channels, affine=False, track_running_stats=False, device=device),
         )
 
     def forward(self, x):
