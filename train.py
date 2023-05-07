@@ -33,8 +33,6 @@ def train(epochs=50, save=True, load=False, model_path='model6.pth'):
                  real_b = real_b.cuda()
             opt_G_A2B.zero_grad()
             opt_G_B2A.zero_grad()
-            opt_D_A.zero_grad()
-            opt_D_B.zero_grad()
 
             cycle_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss = model(real_a, real_b)
             
@@ -43,6 +41,9 @@ def train(epochs=50, save=True, load=False, model_path='model6.pth'):
 
             opt_G_A2B.step()
             opt_G_B2A.step()
+
+            opt_D_A.zero_grad()
+            opt_D_B.zero_grad()
 
             d_A_loss.backward(retain_graph=True)
             d_B_loss.backward()

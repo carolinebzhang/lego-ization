@@ -33,9 +33,9 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     
     # Generate a time-shift representation of the output song
     if genre == 'lego':
-        output_image = model.G_A2B(input_image)
+        output_image = model.G_A2B(input_image.float())
     elif genre == 'real_world':
-        output_image = model.G_B2A(input_image)
+        output_image = model.G_B2A(input_image.float())
     else:
         raise ValueError("Invalid genre specified") 
         #output_image=input_image 
