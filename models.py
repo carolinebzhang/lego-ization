@@ -105,7 +105,7 @@ class Generator(nn.Module):
         # down sampling layers
         current_dims = conv_dim
         for i in range(2):
-            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False, padding_mode='reflect', device=device))
+            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=3, stride=2, padding=1, bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims *= 2
@@ -116,7 +116,7 @@ class Generator(nn.Module):
 
         # up sampling layers
         for i in range(2):
-            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
+            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims = current_dims//2
@@ -142,21 +142,26 @@ class Discriminator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, padding_mode='reflect', device=device))
+        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, device=device))
         layers.append(nn.LeakyReLU(0.2, inplace=True))
         current_dim = conv_dim
 
         # hidden layers
-        for i in range(layer_num):
-            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, padding_mode='reflect', device=device))
+        for i in range(layer_num-1):
+            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, device=device))
             layers.append(nn.InstanceNorm2d(current_dim*2, device=device))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
             current_dim *= 2
 
+        layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=1, padding=1, device=device))
+        layers.append(nn.InstanceNorm2d(current_dim*2, device=device))
+        layers.append(nn.LeakyReLU(0.2, inplace=True))
+        current_dim *= 2
+
         self.model = nn.Sequential(*layers)
 
         # output layer
-        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device)
+        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=4, stride=1, padding=1, bias=False, device=device)
 
     def forward(self, x):
         #print("discriminator forward")
