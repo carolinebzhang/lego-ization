@@ -28,6 +28,7 @@ def train(epochs=50, save=True, load=True, model_path='model6.pth'):
         k = 0
         for i, data in enumerate(images_train_loader):
             real_a, real_b = data['lego_image'], data['real_image']
+            print(real_a.shape)
             if device == 'cuda':
                  real_a = real_a.cuda()
                  real_b = real_b.cuda()
