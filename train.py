@@ -3,14 +3,14 @@ import torch
 from datasets import get_data
 
 images_train_loader, images_test_loader = get_data(1)
-def train(epochs=50, save=True, load=True, model_path='model6.pth'):
+def train(epochs=50, save=True, load=False, model_path='model6.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
     if load:
         model.load_state_dict(torch.load(model_path))
     model = model.to(device)
     path = "model"
-    path_num = 6
+    path_num = 0
     path_ending = ".pth"
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
     # 128x128 or 256x256 images
@@ -28,7 +28,6 @@ def train(epochs=50, save=True, load=True, model_path='model6.pth'):
         k = 0
         for i, data in enumerate(images_train_loader):
             real_a, real_b = data['lego_image'], data['real_image']
-            print(real_a.shape)
             if device == 'cuda':
                  real_a = real_a.cuda()
                  real_b = real_b.cuda()
@@ -80,8 +79,6 @@ def train(epochs=50, save=True, load=True, model_path='model6.pth'):
 
         if save:
             torch.save(model.state_dict(), model_path_new)
-
-        path_num+=1
 
 
 

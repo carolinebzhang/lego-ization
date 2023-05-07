@@ -74,10 +74,10 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, device=device),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device),
             nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, device=device),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device),
             nn.InstanceNorm2d(out_channels, affine=True, track_running_stats=True, device=device),
         )
 
@@ -98,14 +98,14 @@ class Generator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=7, stride=1, padding=3, bias=False, device=device))
+        layers.append(nn.Conv2d(in_channels=3, out_channels=conv_dim, kernel_size=7, stride=1, padding=3, bias=False, padding_mode='reflect', device=device))
         layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True, device=device))
         layers.append(nn.ReLU(inplace=True))
 
         # down sampling layers
         current_dims = conv_dim
         for i in range(2):
-            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
+            layers.append(nn.Conv2d(current_dims, current_dims*2, kernel_size=4, stride=2, padding=1, bias=False, padding_mode='reflect', device=device))
             layers.append(nn.InstanceNorm2d(current_dims*2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims *= 2
@@ -116,13 +116,13 @@ class Generator(nn.Module):
 
         # up sampling layers
         for i in range(2):
-            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
+            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, padding_mode='reflect', bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims = current_dims//2
 
         # output layer
-        layers.append(nn.Conv2d(current_dims, 3, kernel_size=7, stride=1, padding=3, bias=False, device=device))
+        layers.append(nn.Conv2d(current_dims, 3, kernel_size=7, stride=1, padding=3, bias=False, padding_mode='reflect', device=device))
         layers.append(nn.Tanh())
 
         self.model = nn.Sequential(*layers)
@@ -142,13 +142,13 @@ class Discriminator(nn.Module):
         layers = []
 
         # input layer
-        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, device=device))
+        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1, padding_mode='reflect', device=device))
         layers.append(nn.LeakyReLU(0.2, inplace=True))
         current_dim = conv_dim
 
         # hidden layers
         for i in range(layer_num):
-            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, device=device))
+            layers.append(nn.Conv2d(current_dim, current_dim*2, kernel_size=4, stride=2, padding=1, padding_mode='reflect', device=device))
             layers.append(nn.InstanceNorm2d(current_dim*2, device=device))
             layers.append(nn.LeakyReLU(0.2, inplace=True))
             current_dim *= 2
@@ -156,7 +156,7 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(*layers)
 
         # output layer
-        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False, device=device)
+        self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=3, stride=1, padding=1, bias=False, padding_mode='reflect', device=device)
 
     def forward(self, x):
         #print("discriminator forward")
@@ -213,7 +213,7 @@ class CycleGAN(nn.Module):
         #print("cyclegan forward")
         fake_B = self.G_A2B(real_A)
         cycle_A = self.G_B2A(fake_B)
-        print(fake_B.shape)
+        #print(fake_B.shape)
         # red line
         fake_A = self.G_B2A(real_B)
         cycle_B = self.G_A2B(fake_A)
