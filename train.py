@@ -70,6 +70,7 @@ def train(epochs=50, save=True, load=False, model_path='model.pth'):
 
         print(f"fake_A_acc:{total_fake_A_acc/n} fake_B_acc:{total_fake_B_acc/n} real_A_acc:{total_real_A_acc/n} real_B_acc:{total_real_B_acc/n}")
         model_path_new = path + str(path_num) + path_ending
+        path_num+=1
 
         if save:
             torch.save(model.state_dict(), model_path_new)
