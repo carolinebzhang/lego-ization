@@ -196,7 +196,8 @@ class CycleGAN(nn.Module):
             DA_real = self.D_A(real_A)
 
             DB_real = self.D_B(real_B)
-
+            print(DA_fake)
+            print(DA_real)
             fake_A_acc = acc(DA_fake.flatten(), torch.zeros(DA_fake.flatten().shape, device=device))
             
             fake_B_acc = acc(DB_fake.flatten(), torch.zeros(DB_fake.flatten().shape, device=device))
