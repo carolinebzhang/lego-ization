@@ -49,13 +49,34 @@ def train(epochs=50, save=True, load=False, model_path='model.pth'):
             opt_D_B.step()
             print(f"loss: {g_A2B_loss}")
 
-        print(f"epoch:{epoch}")
+        total_fake_A_acc = 0
+        total_fake_B_acc = 0
+        total_real_A_acc = 0
+        total_real_B_acc = 0
+        n = 0
+        for i, data in enumerate(images_test_loader):
+            real_a, real_b = data['lego_image'], data['real_image']
+            if device == 'cuda':
+                real_a = real_a.cuda()
+                real_b = real_b.cuda()
+
+            fake_A_acc, fake_B_acc, real_A_acc, real_B_acc = model.test(real_a, real_b)
+
+            total_fake_A_acc += fake_A_acc
+            total_fake_B_acc += fake_B_acc
+            total_real_A_acc += real_A_acc
+            total_real_B_acc += real_B_acc
+            n += 1
+
+        print(f"fake_A_acc:{total_fake_A_acc/n} fake_B_acc:{total_fake_B_acc/n} real_A_acc:{total_real_A_acc/n} real_B_acc:{total_real_B_acc/n}")
         model_path_new = path + str(path_num) + path_ending
 
         if save:
             torch.save(model.state_dict(), model_path_new)
 
         path_num+=1
+
+
 
     if save:
             torch.save(model.state_dict(), model_path_new)

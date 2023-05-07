@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import l1_loss
 from numpy import random
+import torcheval
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -178,6 +179,32 @@ class CycleGAN(nn.Module):
         self.lamb = lamb
         self.fake_A_pool = ImagePool(2)
         self.fake_B_pool = ImagePool(2)
+
+    def test(self, real_A, real_B):
+        with torch.no_grad():
+            acc = torcheval.metrics.functional.binary_accuracy
+            fake_B = self.G_A2B(real_A)
+            
+            fake_A = self.G_B2A(real_B)
+            
+            DA_fake = self.D_A(fake_A)
+
+            DB_fake = self.D_B(fake_B)
+
+            DA_real = self.D_A(real_A)
+
+            DB_real = self.D_B(real_B)
+
+            fake_A_acc = acc(DA_fake, torch.zeros(len(DA_fake)))
+            
+            fake_B_acc = acc(DB_fake, torch.zeros(len(DB_fake)))
+
+            real_A_acc = acc(DA_real, torch.ones(len(DA_real)))
+
+            real_B_acc = acc(DB_real, torch.ones(len(DB_real)))
+
+            return fake_A_acc, fake_B_acc, real_A_acc, real_B_acc
+
 
     def forward(self, real_A, real_B):
         # blue line
