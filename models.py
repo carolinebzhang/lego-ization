@@ -179,8 +179,8 @@ class CycleGAN(nn.Module):
         self.criterionIdt = nn.L1Loss()
         self.mode = mode
         self.lamb = lamb
-        self.fake_A_pool = ImagePool(5)
-        self.fake_B_pool = ImagePool(5)
+        self.fake_A_pool = ImagePool(25)
+        self.fake_B_pool = ImagePool(25)
 
     def test(self, real_A, real_B):
         with torch.no_grad():
@@ -196,8 +196,7 @@ class CycleGAN(nn.Module):
             DA_real = self.D_A(real_A)
 
             DB_real = self.D_B(real_B)
-            print(DA_fake)
-            print(DA_real)
+
             fake_A_acc = acc(DA_fake.flatten(), torch.zeros(DA_fake.flatten().shape, device=device))
             
             fake_B_acc = acc(DB_fake.flatten(), torch.zeros(DB_fake.flatten().shape, device=device))
