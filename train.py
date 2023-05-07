@@ -23,6 +23,9 @@ def train(epochs=50, save=True, load=False, model_path='model.pth'):
         model.train()
         print(f"epoch:{epoch}")
         #for i, batch in batches: # TODO FIGURE OUR DATA LOADING / BATCHING
+        total_d_A_loss = 0
+        total_d_B_loss = 0
+        k = 0
         for i, data in enumerate(images_train_loader):
             real_a, real_b = data['lego_image'], data['real_image']
             if device == 'cuda':
@@ -47,6 +50,10 @@ def train(epochs=50, save=True, load=False, model_path='model.pth'):
             opt_D_A.step()
             opt_D_B.step()
 
+            k += 1
+            total_d_A_loss += d_A_loss
+            total_d_B_loss += d_B_loss
+        print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k}")
         total_fake_A_acc = 0
         total_fake_B_acc = 0
         total_real_A_acc = 0
