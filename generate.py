@@ -45,4 +45,5 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     data.save(final_path)
 
 if __name__=="__main__":
-    generate_image('HOUSE_TEST.jpg', genre='lego', model_path='Hopefully_Fixed_model/model8.pth', output_image_path="house_test_poch_8")
+    generate_image('ORIGINAL.jpg', genre='lego', model_path='good_descriminator.pth', output_image_path="good_discriminator.jpg")
+    generate_image('ORIGINAL.jpg', genre='lego', model_path='bad_discriminator.pth', output_image_path="bad_discriminator.jpg")
