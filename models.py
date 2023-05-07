@@ -116,7 +116,7 @@ class Generator(nn.Module):
 
         # up sampling layers
         for i in range(2):
-            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, padding_mode='reflect', bias=False, device=device))
+            layers.append(nn.ConvTranspose2d(current_dims, current_dims//2, kernel_size=4, stride=2, padding=1, bias=False, device=device))
             layers.append(nn.InstanceNorm2d(current_dims//2, affine=True, track_running_stats=True, device=device))
             layers.append(nn.ReLU(inplace=True))
             current_dims = current_dims//2
