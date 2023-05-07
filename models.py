@@ -195,13 +195,13 @@ class CycleGAN(nn.Module):
 
             DB_real = self.D_B(real_B)
 
-            fake_A_acc = acc(DA_fake.flatten(), torch.zeros(DA_fake.flatten().shape))
+            fake_A_acc = acc(DA_fake.flatten(), torch.zeros(DA_fake.flatten().shape, device=device))
             
-            fake_B_acc = acc(DB_fake.flatten(), torch.zeros(DB_fake.flatten().shape))
+            fake_B_acc = acc(DB_fake.flatten(), torch.zeros(DB_fake.flatten().shape, device=device))
 
-            real_A_acc = acc(DA_real.flatten(), torch.ones(DA_real.flatten().shape))
+            real_A_acc = acc(DA_real.flatten(), torch.ones(DA_real.flatten().shape, device=device))
 
-            real_B_acc = acc(DB_real.flatten(), torch.ones(DB_real.flatten().shape))
+            real_B_acc = acc(DB_real.flatten(), torch.ones(DB_real.flatten().shape, device=device))
 
             return fake_A_acc, fake_B_acc, real_A_acc, real_B_acc
 
