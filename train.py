@@ -1,16 +1,16 @@
 from models import CycleGAN
 import torch
-from datasets import get_data
+from datasets import get_data, get_scene_data
 
-images_train_loader, images_test_loader = get_data(8)
-def train(epochs=50, save=True, load=True, model_path='bigmodel22.pth'):
+images_train_loader, images_test_loader = get_scene_data(8)
+def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
     if load:
         model.load_state_dict(torch.load(model_path))
     model = model.to(device)
     path = "bigmodel"
-    path_num = 23
+    path_num = 0
     path_ending = ".pth"
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
     # 128x128 or 256x256 images

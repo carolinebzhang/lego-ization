@@ -84,3 +84,20 @@ def get_classifier_data(batch_size):
     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
 
     return train_loader, test_loader
+
+def get_scene_data(batch_size):
+    lego_samples = numpy_to_torch("lego_scene_arrays")
+    object_samples = numpy_to_torch("flickr_scene_arrays")
+
+    num_samples = min(len(lego_samples), len(object_samples))
+    num_samples_round = num_samples // batch_size
+    lego_samples = lego_samples[:num_samples_round*batch_size]
+    object_samples = object_samples[:num_samples_round*batch_size]
+    lego_real_set = ImageDataset(lego_objects=lego_samples, real_objects=object_samples, lego_label=[0,1], real_label=[1,0])
+
+    training_set, testing_set = data.random_split(lego_real_set, [int(round(len(lego_real_set)*0.8)), int(round(len(lego_real_set)*0.2))])
+    
+    training_loader = DataLoader(dataset=lego_real_set, batch_size=batch_size, shuffle=True)
+    testing_loader = DataLoader(dataset=testing_set, batch_size=batch_size, shuffle=False)
+    print('converted to dataloaders!')
+    return training_loader, testing_loader
