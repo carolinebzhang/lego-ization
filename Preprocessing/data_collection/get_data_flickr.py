@@ -9,7 +9,7 @@ api_secret = "a008ca98a9500197"
 
 flickr = flickrapi.FlickrAPI(api_key, api_secret, format='parsed-json')
 # Directory where the downloaded photos will be saved
-download_dir = 'lego_images/'
+download_dir = 'realworld_scenes/'
 
 # Connect to the Flickr API
 
@@ -17,12 +17,11 @@ download_dir = 'lego_images/'
 def add_legoset(search_terms: list[str]):
     b = 9100
     for term in search_terms:
-        for i in [1,2,3]:
-            print(i)
+        for i in range(3):
             photos = flickr.photos.search(
                 #text='lego set',
                 tags=term,
-                color_codes="c",
+                #color_codes="c",
                 sort="relevance",
                 per_page=100,
                 page=i,
@@ -47,4 +46,4 @@ def add_legoset(search_terms: list[str]):
                     continue
 
 
-#add_legoset(["lego bricks"])
+add_legoset(["scene", "landscape", "houses"])
