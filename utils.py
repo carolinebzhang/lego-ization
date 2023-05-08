@@ -69,14 +69,19 @@ def numpy_to_torch(folder_path):
     # check if the file is a .npy file
         if filename.endswith(".npy"):
             # load the array from the file
-            img_npy = np.load(os.path.join(folder_path, filename))
-            img_npys.append(img_npy)
+            try:
+                img_npy = np.load(os.path.join(folder_path, filename))
+                img_tensor = torch.tensor(img_npy)
+                img_tensor = torch.reshape(img_tensor, (3, 256, 256))
+                img_npys.append(img_tensor)
+            except Exception as e:
+                continue
             #print(timeshift)
             
-    final_images = [torch.reshape(torch.tensor(img), (3, 256, 256)) for img in img_npys]
+    #final_images = [torch.reshape(torch.tensor(img), (3, 256, 256)) for img in img_npys]
 
     print("loaded!") 
-    return final_images
+    return img_npys
 
 def crop_center(image_path, array_path):
     """
@@ -90,7 +95,7 @@ def crop_center(image_path, array_path):
         top = (height - 256) / 2
         right = (width + 256) / 2
         bottom = (height + 256) / 2
-        image = image.crop((left, top, right, bottom))
+        image.crop((left, top, right, bottom))
         image = np.asarray(image)
         np.save(array_path, image, allow_pickle=True)
 
