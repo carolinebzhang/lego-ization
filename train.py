@@ -2,7 +2,7 @@ from models import CycleGAN
 import torch
 from datasets import get_data
 
-images_train_loader, images_test_loader = get_data(32)
+images_train_loader, images_test_loader = get_data(16)
 def train(epochs=50, save=True, load=False, model_path='model30ep.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
