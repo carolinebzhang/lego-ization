@@ -2,14 +2,14 @@ from models import CycleGAN
 import torch
 from datasets import get_data
 
-images_train_loader, images_test_loader = get_data(1)
-def train(epochs=50, save=True, load=True, model_path='model30ep.pth'):
+images_train_loader, images_test_loader = get_data(32)
+def train(epochs=50, save=True, load=False, model_path='model30ep.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
     if load:
         model.load_state_dict(torch.load(model_path))
     model = model.to(device)
-    path = "model"
+    path = "bigmodel"
     path_num = 0
     path_ending = ".pth"
     # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
@@ -25,6 +25,9 @@ def train(epochs=50, save=True, load=True, model_path='model30ep.pth'):
         #for i, batch in batches: # TODO FIGURE OUR DATA LOADING / BATCHING
         total_d_A_loss = 0
         total_d_B_loss = 0
+        total_cycle_loss = 0
+        total_A2B_loss = 0
+        total_B2A_loss = 0
         k = 0
         for i, data in enumerate(images_train_loader):
             real_a, real_b = data['lego_image'].float(), data['real_image'].float()
@@ -54,7 +57,10 @@ def train(epochs=50, save=True, load=True, model_path='model30ep.pth'):
             k += 1
             total_d_A_loss += float(d_A_loss)
             total_d_B_loss += float(d_B_loss)
-        print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k}")
+            total_cycle_loss += float(cycle_loss)
+            total_A2B_loss += float(g_A2B_loss)
+            total_B2A_loss += float(g_B2A_loss)
+        print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k} cycle_loss:{total_cycle_loss/k} g_A2B_loss:{total_A2B_loss/k} g_B2A_loss:{total_B2A_loss/k}")
         total_fake_A_acc = 0
         total_fake_B_acc = 0
         total_real_A_acc = 0

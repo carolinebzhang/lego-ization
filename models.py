@@ -172,8 +172,8 @@ class CycleGAN(nn.Module):
     def __init__(self, mode='train', lamb=10):
         super(CycleGAN, self).__init__()
         assert mode in ["train", "A2B", "B2A"]
-        self.G_A2B = Generator(conv_dim=64, layer_num=3)
-        self.G_B2A = Generator(conv_dim=64, layer_num=3)
+        self.G_A2B = Generator(conv_dim=64, layer_num=6)
+        self.G_B2A = Generator(conv_dim=64, layer_num=6)
         self.D_A = Discriminator(image_size=256, conv_dim=64, layer_num=3)
         self.D_B = Discriminator(image_size=256, conv_dim=64, layer_num=3)
         self.l2loss = nn.MSELoss(reduction="mean")
@@ -181,8 +181,8 @@ class CycleGAN(nn.Module):
         self.criterionIdt = nn.L1Loss()
         self.mode = mode
         self.lamb = lamb
-        self.fake_A_pool = ImagePool(25)
-        self.fake_B_pool = ImagePool(25)
+        self.fake_A_pool = ImagePool(50)
+        self.fake_B_pool = ImagePool(50)
 
     def test(self, real_A, real_B):
         with torch.no_grad():
@@ -227,8 +227,8 @@ class CycleGAN(nn.Module):
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
 
-            i_loss_a2b = l1_loss(real_A, fake_B) * self.lamb * .5
-            i_loss_b2a = l1_loss(real_B, fake_A) * self.lamb * .5
+            i_loss_a2b = l1_loss(real_A, fake_B) * self.lamb * .3
+            i_loss_b2a = l1_loss(real_B, fake_A) * self.lamb * .3
 
             if device == 'cuda':
                 g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss + i_loss_a2b
