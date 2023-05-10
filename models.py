@@ -1,4 +1,3 @@
-#https://github.com/wangguanan/Pytorch-Image-Translation-GANs/blob/master/cyclegan/models.py
 import torch
 import torch.nn as nn
 from torch.nn.functional import l1_loss
@@ -7,19 +6,13 @@ from torcheval import metrics
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# cycle loss, using l1_loss
 def cycle_loss(real_a, cycle_a, real_b, cycle_b):
     return l1_loss(real_a, cycle_a) + l1_loss(real_b, cycle_b)
 
-def weights_init_normal(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant_(m.bias.data, 0.0)
-
-# implement identity loss/identiy loss pretraining?
 # using an image pool to buffer images, ideally, helps the generator stay ahead of the discriminator 
+# This image pool implementation comes from the original CycleGAN paper's PyTorch implementation:
+# https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/tree/master
 class ImagePool():
     """This class implements an image buffer that stores previously generated images.
     This buffer enables us to update discriminators using a history of generated images
@@ -67,6 +60,8 @@ class ImagePool():
         return return_images
 
 
+# This implementation of a resnet block was adapted from
+# https://github.com/wangguanan/Pytorch-Image-Translation-GANs/
 class ResidualBlock(nn.Module):
     '''Residual Block with Instance Normalization'''
 
@@ -82,10 +77,12 @@ class ResidualBlock(nn.Module):
         )
 
     def forward(self, x):
-        #print("residual forward")
         return self.model(x) + x
 
-
+# We adapt this resnet generator from
+# https://github.com/wangguanan/Pytorch-Image-Translation-GANs/
+# though we experiment with different model parameters, such as kernel size, bias, 
+# padding modes, and instance normalization
 class Generator(nn.Module):
     '''Generator with Down sampling, Several ResBlocks and Up sampling.
        Down/Up Samplings are used for less computation.
@@ -127,10 +124,10 @@ class Generator(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self, x,):
-        #("generator forward")
         return self.model(x)
 
-
+# We adapt this discriminator from
+# https://github.com/wangguanan/Pytorch-Image-Translation-GANs/
 class Discriminator(nn.Module):
     '''Discriminator with PatchGAN'''
 
@@ -162,28 +159,43 @@ class Discriminator(nn.Module):
         self.conv_src = nn.Conv2d(current_dim, 1, kernel_size=4, stride=1, padding=1, bias=True, device=device)
 
     def forward(self, x):
-        #print("discriminator forward")
         x = self.model(x)
         out_src = self.conv_src(x)
         return out_src
     
+# We follow a similar CycleGAN class and training loop as
+# https://github.com/Asthestarsfalll/Symbolic-Music-Genre-Transfer-with-CycleGAN-for-pytorch
 class CycleGAN(nn.Module):
 
     def __init__(self, mode='train', lamb=10):
         super(CycleGAN, self).__init__()
+
+        # Train for training, or A2B or B2A for evaluation
         assert mode in ["train", "A2B", "B2A"]
-        self.G_A2B = Generator(conv_dim=64, layer_num=6)
-        self.G_B2A = Generator(conv_dim=64, layer_num=6)
+        self.mode = mode
+
+        # Generator for domain A->B
+        self.G_A2B = Generator(conv_dim=64, layer_num=6) # 6 resnet blocks, as in the CycleGAN paper
+        
+        # Generator for domain B->A
+        self.G_B2A = Generator(conv_dim=64, layer_num=6) # 6 resnet blocks
+        
+        # Discriminators for domains A and B
         self.D_A = Discriminator(image_size=256, conv_dim=64, layer_num=3)
         self.D_B = Discriminator(image_size=256, conv_dim=64, layer_num=3)
-        self.l2loss = nn.MSELoss(reduction="mean")
-        self.criterionCycle = nn.L1Loss()
-        self.criterionIdt = nn.L1Loss()
-        self.mode = mode
-        self.lamb = lamb
+
+        self.l2loss = nn.MSELoss(reduction="mean") # LSGAN
+
+        self.criterionIdt = nn.L1Loss()  # We use L1 loss for cycle and identity losses
+
+        self.lamb = lamb # Weighting of cycle loss
+
+        # Image pools
         self.fake_A_pool = ImagePool(50)
         self.fake_B_pool = ImagePool(50)
 
+    # Provides test accuracies for the discriminators on real images and ones generated
+    # by our generators
     def test(self, real_A, real_B):
         with torch.no_grad():
             acc = metrics.functional.binary_accuracy
@@ -211,12 +223,9 @@ class CycleGAN(nn.Module):
 
 
     def forward(self, real_A, real_B):
-        # blue line
-        #print("cyclegan forward")
         fake_B = self.G_A2B(real_A)
         cycle_A = self.G_B2A(fake_B)
-        #print(fake_B.shape)
-        # red line
+
         fake_A = self.G_B2A(real_B)
         cycle_B = self.G_A2B(fake_A)
 
@@ -227,18 +236,18 @@ class CycleGAN(nn.Module):
             # Cycle loss
             c_loss = self.lamb * cycle_loss(real_A, cycle_A, real_B, cycle_B)
 
+            # Identity loss
             i_loss_a2b = l1_loss(real_A, fake_B) * self.lamb * .3
             i_loss_b2a = l1_loss(real_B, fake_A) * self.lamb * .3
 
+            # Generator losses
             if device == 'cuda':
                 g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss + i_loss_a2b
                 g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss + i_loss_b2a
             else: 
-                # Generator losses
                 g_A2B_loss = self.l2loss(DB_fake, torch.ones_like(DB_fake).cuda()) + c_loss + i_loss_a2b
                 g_B2A_loss = self.l2loss(DA_fake, torch.ones_like(DA_fake).cuda()) + c_loss + i_loss_b2a
 
-            # Discriminator losses
             DA_real = self.D_A(real_A)
             DB_real = self.D_B(real_B)
 
@@ -249,6 +258,7 @@ class CycleGAN(nn.Module):
             DA_fake = self.D_A(fake_A)
             DB_fake = self.D_B(fake_B)
 
+            # Discriminator loss
             if device == 'cuda':
                 d_A_loss_real = self.l2loss(DA_real, torch.ones_like(DA_real).cuda())
                 d_A_loss_fake = self.l2loss(DA_fake, torch.zeros_like(DA_fake).cuda())
@@ -263,13 +273,6 @@ class CycleGAN(nn.Module):
                 d_B_loss_real = self.l2loss(DB_real, torch.ones_like(DB_real))
                 d_B_loss_fake = self.l2loss(DB_fake, torch.zeros_like(DB_fake))
                 d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
-
-            # d_A_loss_real = self.l2loss(DA_real, DA_fake)
-            # d_A_loss_fake = self.l2loss(DA_fake, DA_real)
-            # d_A_loss = (d_A_loss_real + d_A_loss_fake) / 2
-            # d_B_loss_real = self.l2loss(DB_real, DB_fake)
-            # d_B_loss_fake = self.l2loss(DB_fake, DB_real)
-            # d_B_loss = (d_B_loss_real + d_B_loss_fake) / 2
 
             return (c_loss, g_A2B_loss, g_B2A_loss, d_A_loss, d_B_loss)
 

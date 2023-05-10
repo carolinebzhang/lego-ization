@@ -2,17 +2,23 @@ from models import CycleGAN
 import torch
 from datasets import get_data, get_scene_data
 
-images_train_loader, images_test_loader = get_scene_data(8)
+images_train_loader, images_test_loader = get_scene_data(8) # batch size is 8
+
+# train loop
 def train(epochs=50, save=True, load=True, model_path='bigmodel72.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
+
+    # load from saved model
     if load:
         model.load_state_dict(torch.load(model_path))
+
     model = model.to(device)
     path = "bigmodel"
     path_num = 0
     path_ending = ".pth"
 
+    # Adam optimizers with lr .0002 as in CycleGAN paper
     opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters(), lr=.0002)
     opt_G_B2A = torch.optim.Adam(model.G_B2A.parameters(), lr=.0002)
     opt_D_A = torch.optim.Adam(model.D_A.parameters(), lr=.0002)
@@ -60,6 +66,8 @@ def train(epochs=50, save=True, load=True, model_path='bigmodel72.pth'):
             total_B2A_loss += float(g_B2A_loss)
 
         print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k} cycle_loss:{total_cycle_loss/k} g_A2B_loss:{total_A2B_loss/k} g_B2A_loss:{total_B2A_loss/k}")
+        
+        # Test discriminator accuracies with test data
         total_fake_A_acc = 0
         total_fake_B_acc = 0
         total_real_A_acc = 0
@@ -80,9 +88,10 @@ def train(epochs=50, save=True, load=True, model_path='bigmodel72.pth'):
             n += 1
 
         print(f"fake_A_acc:{total_fake_A_acc/n} fake_B_acc:{total_fake_B_acc/n} real_A_acc:{total_real_A_acc/n} real_B_acc:{total_real_B_acc/n}")
+        
         model_path_new = path + str(path_num) + path_ending
         path_num+=1
-
+        # save model weights
         if save:
             torch.save(model.state_dict(), model_path_new)
 
