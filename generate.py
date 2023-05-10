@@ -55,4 +55,4 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     data.save(final_path)
 
 if __name__=="__main__":
-    generate_image('Lego input.jpeg', genre='real_world', model_path='scene_6.pth', output_image_path="lego_real_6")
+    generate_image('test.png', genre='lego', model_path='Models/Object-Object models/bigmodel72.pth', output_image_path="lego_to_real")
