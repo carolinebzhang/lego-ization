@@ -5,7 +5,7 @@ You can download the numpy arrays generated from our training/testing images her
 Also, please note that a good amount of the arrays failed to upload to google drive. If you would like to download all of the arrays, you can access them on this branch: https://github.com/carolinebzhang/lego-ization/tree/all_arrays . You don't need the images to run any of the training/generating code. 
 
 Packages required to run this project inlcude the most recent versions of:
-PyTorch and torcheval
-Numpy
-PIL
-Skimage
+- PyTorch and torcheval
+- Numpy
+- PIL
+- Skimage
