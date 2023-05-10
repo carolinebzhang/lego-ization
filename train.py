@@ -3,7 +3,7 @@ import torch
 from datasets import get_data, get_scene_data
 
 images_train_loader, images_test_loader = get_scene_data(8)
-def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
+def train(epochs=50, save=True, load=True, model_path='bigmodel72.pth'):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CycleGAN()
     if load:
