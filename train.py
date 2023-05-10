@@ -12,8 +12,7 @@ def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
     path = "bigmodel"
     path_num = 0
     path_ending = ".pth"
-    # paper uses lr=.0002, batch size=1, 100 epochs with lr and then 100 more with decaying lr
-    # 128x128 or 256x256 images
+
     opt_G_A2B = torch.optim.Adam(model.G_A2B.parameters(), lr=.0002)
     opt_G_B2A = torch.optim.Adam(model.G_B2A.parameters(), lr=.0002)
     opt_D_A = torch.optim.Adam(model.D_A.parameters(), lr=.0002)
@@ -22,7 +21,6 @@ def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
     for epoch in range(epochs):
         model.train()
         print(f"epoch:{epoch}")
-        #for i, batch in batches: # TODO FIGURE OUR DATA LOADING / BATCHING
         total_d_A_loss = 0
         total_d_B_loss = 0
         total_cycle_loss = 0
@@ -60,6 +58,7 @@ def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
             total_cycle_loss += float(cycle_loss)
             total_A2B_loss += float(g_A2B_loss)
             total_B2A_loss += float(g_B2A_loss)
+
         print(f"d_A_loss:{total_d_A_loss/k} d_B_loss:{total_d_B_loss/k} cycle_loss:{total_cycle_loss/k} g_A2B_loss:{total_A2B_loss/k} g_B2A_loss:{total_B2A_loss/k}")
         total_fake_A_acc = 0
         total_fake_B_acc = 0
@@ -86,8 +85,6 @@ def train(epochs=50, save=True, load=False, model_path='bigmodel22.pth'):
 
         if save:
             torch.save(model.state_dict(), model_path_new)
-
-
 
     if save:
             torch.save(model.state_dict(), model_path_new)

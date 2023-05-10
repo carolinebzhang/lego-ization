@@ -18,29 +18,23 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     output_image = output_image * 255
     output_image = output_image.astype(np.uint8)
     data = im.fromarray(output_image)
+
     if data.mode != 'RGB':
         data = data.convert('RGB')
       
-    # saving the final output 
-    # as a PNG file
-    final_path = "saving.png"
-    data.save(final_path)
-    #input_image = torch.permute(torch.tensor(input_image).double(),(2,0,1))
     input_image = torch.tensor(input_image)
     input_image = torch.reshape(input_image, (3, 256, 256))
     input_image = torch.unsqueeze(input_image, 0)
-    model.mode = "A2B"
     
-    # Generate a time-shift representation of the output song
     if genre == 'lego':
+        model.mode = "A2B"
         output_image = model.G_A2B(input_image.float())
     elif genre == 'real_world':
+        model.mode = "B2A"
         output_image = model.G_B2A(input_image.float())
     else:
         raise ValueError("Invalid genre specified") 
-        #output_image=input_image 
-    print(output_image.shape) 
-
+    
     output_image = output_image.detach().cpu().numpy() 
     output_image = np.reshape(output_image, (256, 256, 3))
 
@@ -50,13 +44,10 @@ def generate_image(input_img_path, genre, model_path, output_image_path):
     data = im.fromarray(output_image)
     if data.mode != 'RGB':
         data = data.convert('RGB')
-      
-    # saving the final output 
-    # as a PNG file
+
+    # saving the final output as a PNG file
     final_path = output_image_path + ".png"
     data.save(final_path)
 
 if __name__=="__main__":
-    #generate_image('APPLES.jpg', genre='lego', model_path='model19.pth', output_image_path="bigmodelapple.jpg")
-    generate_image('HOUSE_SCENE.jpg', genre='lego', model_path='scene_11.pth', output_image_path="scene_11_house_tolego")
-    #generate_image('ORIGINAL.jpg', genre='lego', model_path='bad_discriminator.pth', output_image_path="bad_discriminator.jpg")
+    generate_image('Lego input.jpeg', genre='real_world', model_path='scene_6.pth', output_image_path="lego_real_6")
