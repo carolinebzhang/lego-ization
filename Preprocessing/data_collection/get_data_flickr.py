@@ -4,31 +4,24 @@ import os
 from PIL import Image
 from bs4 import BeautifulSoup
 
-api_key = "fa47d1618c96629830cad08efdb49875"
-api_secret = "a008ca98a9500197"
+api_key = 'REMOVED'
+api_secret = 'REMOVED'
 
 flickr = flickrapi.FlickrAPI(api_key, api_secret, format='parsed-json')
-# Directory where the downloaded photos will be saved
-download_dir = 'realworld_scenes/'
-
-# Connect to the Flickr API
 
 # Search for photos matching the specified criteria
-def add_legoset(search_terms: list[str]):
+def add_images(search_terms: list[str], download_dir: str):
     b = 9100
     for term in search_terms:
         for i in range(3):
             photos = flickr.photos.search(
-                #text='lego set',
                 tags=term,
-                #color_codes="c",
+                #color_codes="c", 
                 sort="relevance",
                 per_page=100,
                 page=i,
                 extras='url_c'
             )
-
-            # Download each photo and save it to the download directory
             
             for photo in photos['photos']['photo']:
                 
@@ -46,4 +39,4 @@ def add_legoset(search_terms: list[str]):
                     continue
 
 
-add_legoset(["scene", "landscape", "houses"])
+add_images(["scene", "landscape", "houses"], "scene_images")
